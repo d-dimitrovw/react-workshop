@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import userService from "../services/userService";
 
@@ -7,20 +7,19 @@ import Search from "./Search";
 import UserListItem from "./UserListItem";
 import UserCreate from "./UserCreate";
 import UserInfo from "./UserInfo";
+import UserDelete from "./UserDelete";
 
 export default function UserList() {
     const [users, setUsers] = useState([]); 
     const [showCreate, setShowCreate] = useState(false);
     const [userIdInfo, setUserIdInfo] = useState(null);
+    const [userIdDelete, setUserIdDelete] = useState(null);
+    const [userIdEdit, setUserIdEdit] = useState(null);
 
     useEffect(() => {
         userService.getAll()
             .then(result => {
                 setUsers(result);                
-            })
-            .catch(err => {
-                console.log(err.message);
-                
             })
     }, []);
 
@@ -30,6 +29,7 @@ export default function UserList() {
 
     const closeCreateUserClickHandler = () => {
         setShowCreate(false);
+        setUserIdEdit(null);
     }
 
     const userInfoClickHandler = (userId) => {
@@ -39,7 +39,7 @@ export default function UserList() {
     const saveCreateUserClickHandler = async (e) => {
         e.preventDefault();
 
-        const formData = new FormData(e.target);
+        const formData = new FormData(e.target.parentElement.parentElement);
         const userData = Object.fromEntries(formData);
         
         const newUser = await userService.create(userData);
@@ -50,8 +50,40 @@ export default function UserList() {
 
     const userInfoCloseHandler = () => {
         setUserIdInfo(null);
-
     }
+
+    const userDeleteClickHandler = (userId) => {
+        setUserIdDelete(userId)
+    }
+
+    const userDeleteCloseHandler = () => {
+        setUserIdDelete(null);
+    }
+
+    const userDeleteHandler = async () => {
+        await userService.delete(userIdDelete);
+        setUsers(state => state.filter(user => user._id !== userIdDelete));
+        setUserIdDelete(null);
+    }
+
+    const userEditClickHandler = (userId) => {
+        setUserIdEdit(userId);
+    }
+
+    const saveEditUserClickHandler = async (e) => {
+        const userId = userIdEdit;
+        e.preventDefault();
+
+        const formData = new FormData(e.target.parentElement.parentElement);
+        const userData = Object.fromEntries(formData);
+
+        const updatedUser = await userService.update(userId, userData);
+
+        setUsers(state => state.map(user => user._id === userId ? updatedUser : user));
+
+        setUserIdEdit(null);
+    }
+
     return (
         <section className="card users-container">
             {/* <!-- Search bar component --> */}
@@ -67,6 +99,22 @@ export default function UserList() {
                 <UserInfo 
                     userId={userIdInfo}
                     onClose={userInfoCloseHandler}
+                />
+            )}
+
+            {userIdDelete && (
+                <UserDelete 
+                    onClose={userDeleteCloseHandler}
+                    onDelete={userDeleteHandler} 
+                />
+            )}
+
+            {userIdEdit && (
+                <UserCreate 
+                    userId={userIdEdit}
+                    onClose={closeCreateUserClickHandler} 
+                    onSave={saveCreateUserClickHandler}
+                    onEdit={saveEditUserClickHandler}
                 />
             )}
 
@@ -183,8 +231,10 @@ export default function UserList() {
                     <tbody>
                         {/* <!-- Table row component --> */}
                         {users.map(user => <UserListItem
-                        onInfoClick={userInfoClickHandler} 
                         key={user._id} 
+                        onInfoClick={userInfoClickHandler} 
+                        onDeleteClick={userDeleteClickHandler}
+                        onEditClick={userEditClickHandler}
                         {...user} />)}
                     </tbody>
                 </table>

@@ -44,8 +44,7 @@ export default function UserInfo({
                             <p>Email: <strong>{user.email}</strong></p>
                             <p>Phone Number: <strong>{user.phoneNumber}</strong></p>
                             <p>
-                                Address:
-                                {user.address?.country}, {user.address?.city}, {user.address?.street} {user.address?.streetNumber}
+                                Address: <strong>{user.address?.country}, {user.address?.city}, {user.address?.street} {user.address?.streetNumber}</strong>
                             </p>
 
                             <p>Created on: <strong>{fromIsoDate(user.createdAt)}</strong></p>
